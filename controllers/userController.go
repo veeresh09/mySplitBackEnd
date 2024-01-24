@@ -40,13 +40,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request, collection *mongo.Collec
 		return
 	}
 
-	// Insert the user into the collection
-	_, err = collection.InsertOne(context.TODO(), user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -54,6 +47,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request, collection *mongo.Collec
 		return
 	}
 	user.Password = string(hashedPassword)
+
+	// Insert the user into the collection
+	_, err = collection.InsertOne(context.TODO(), user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Respond with the created user
 	err = json.NewEncoder(w).Encode(user)
