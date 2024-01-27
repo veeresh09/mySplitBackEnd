@@ -33,3 +33,7 @@ func GetUsersCollection(client *mongo.Client) *mongo.Collection {
 func GetGroupsCollection(client *mongo.Client) *mongo.Collection {
 	return client.Database("mySplit").Collection("groups")
 }
+
+func GetExpenseCollection(client *mongo.Client) *mongo.Collection {
+	return client.Database("mySplit").Collection("expenses")
+}

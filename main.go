@@ -20,8 +20,7 @@ func main() {
 	}(client, context.TODO())
 	usersCollection := db.GetUsersCollection(client)
 	groupCollection := db.GetGroupsCollection(client)
-	expenseCollection := client.Database("yourDatabaseName").Collection("expenses")
-
+	expenseCollection := db.GetExpenseCollection(client)
 	r := mux.NewRouter()
 	r.HandleFunc("/api/example", controllers.ExampleAPIHandler)
 
