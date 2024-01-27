@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 	"mySplitBackEnd/config"
@@ -82,7 +83,7 @@ func userExists(collection *mongo.Collection, email, mobileNumber string) (bool,
 }
 
 // SignIn handles user authentication and returns a JWT.
-func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection) {
+func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection, groupCollection *mongo.Collection, expenseCollection *mongo.Collection) {
 	var credentials struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -126,8 +127,88 @@ func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	var groups []models.Group
+	groupFilter := bson.M{"users": bson.M{"$in": []interface{}{user.ID}}}
+	groupCursor, err := groupCollection.Find(context.TODO(), groupFilter)
+	if err != nil {
+		http.Error(w, "Error fetching groups: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func(groupCursor *mongo.Cursor, ctx context.Context) {
+		err := groupCursor.Close(ctx)
+		if err != nil {
 
-	// Return the token
+		}
+	}(groupCursor, context.TODO())
+	for groupCursor.Next(context.TODO()) {
+		var group models.Group
+		if err := groupCursor.Decode(&group); err != nil {
+			http.Error(w, "Error decoding group: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		groups = append(groups, group)
+	}
+
+	// Find expenses created by the user
+	var expenses []models.Expense
+	expenseFilter := bson.M{"createdBy": user.ID}
+	expenseCursor, err := expenseCollection.Find(context.TODO(), expenseFilter)
+	if err != nil {
+		http.Error(w, "Error fetching expenses: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func(expenseCursor *mongo.Cursor, ctx context.Context) {
+		err := expenseCursor.Close(ctx)
+		if err != nil {
+
+		}
+	}(expenseCursor, context.TODO())
+	for expenseCursor.Next(context.TODO()) {
+		var expense models.Expense
+		if err := expenseCursor.Decode(&expense); err != nil {
+			http.Error(w, "Error decoding expense: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		expenses = append(expenses, expense)
+	}
+
+	// Find other users in these groups
+	userIDsSet := make(map[primitive.ObjectID]struct{})
+	for _, group := range groups {
+		for _, userID := range group.Users {
+			userIDsSet[userID] = struct{}{}
+		}
+	}
+
+	var usersInGroups []models.User
+	for userID := range userIDsSet {
+		if userID == user.ID {
+			continue // Skip the current user
+		}
+		var user models.User
+		if err := collection.FindOne(context.TODO(), bson.M{"_id": userID}).Decode(&user); err != nil {
+			// Handle error, note that this might fail if the user doesn't exist
+			continue
+		}
+		usersInGroups = append(usersInGroups, user)
+	}
+
+	// Return the token and additional data
+	response := struct {
+		Token         string           `json:"token"`
+		Groups        []models.Group   `json:"groups"`
+		Expenses      []models.Expense `json:"expenses"`
+		UsersInGroups []models.User    `json:"usersInGroups"`
+	}{
+		Token:         tokenString,
+		Groups:        groups,
+		Expenses:      expenses,
+		UsersInGroups: usersInGroups,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }

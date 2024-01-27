@@ -30,7 +30,7 @@ func main() {
 	}).Methods("POST")
 
 	r.HandleFunc("/api/signin", func(w http.ResponseWriter, r *http.Request) {
-		controllers.SignIn(w, r, usersCollection)
+		controllers.SignIn(w, r, usersCollection, groupCollection, expenseCollection)
 	}).Methods("POST")
 
 	r.HandleFunc("/api/groups", func(w http.ResponseWriter, r *http.Request) {
