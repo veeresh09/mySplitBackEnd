@@ -195,6 +195,7 @@ func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection
 
 	// Return the token and additional data
 	response := struct {
+		UserId        string           `json:"userId"`
 		UserName      string           `json:"userName"`
 		Email         string           `json:"email"`
 		Token         string           `json:"token"`
@@ -202,6 +203,7 @@ func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection
 		Expenses      []models.Expense `json:"expenses"`
 		UsersInGroups []models.User    `json:"usersInGroups"`
 	}{
+		UserId:        user.ID.Hex(),
 		UserName:      user.Name,
 		Email:         user.Email,
 		Token:         tokenString,
