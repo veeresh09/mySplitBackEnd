@@ -218,3 +218,57 @@ func SignIn(w http.ResponseWriter, r *http.Request, collection *mongo.Collection
 		return
 	}
 }
+
+// GetUserByEmail finds a user by their email address.
+func GetUserByEmail(w http.ResponseWriter, r *http.Request, collection *mongo.Collection) {
+	// Extract email from query parameters
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		http.Error(w, "Email parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err := collection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		return
+	}
+}
+
+// GetUserByPhoneNumber finds a user by their mobile number.
+func GetUserByPhoneNumber(w http.ResponseWriter, r *http.Request, collection *mongo.Collection) {
+	// Extract mobile number from query parameters
+	mobileNumber := r.URL.Query().Get("mobileNumber")
+	if mobileNumber == "" {
+		http.Error(w, "MobileNumber parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	err := collection.FindOne(context.TODO(), bson.M{"mobileNumber": mobileNumber}).Decode(&user)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		return
+	}
+}

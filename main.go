@@ -32,6 +32,14 @@ func main() {
 		controllers.SignIn(w, r, usersCollection, groupCollection, expenseCollection)
 	}).Methods("POST")
 
+	r.HandleFunc("/api/user/email", func(w http.ResponseWriter, r *http.Request) {
+		controllers.GetUserByEmail(w, r, usersCollection)
+	}).Methods("GET")
+
+	r.HandleFunc("/api/user/phoneNumber", func(w http.ResponseWriter, r *http.Request) {
+		controllers.GetUserByPhoneNumber(w, r, usersCollection)
+	}).Methods("GET")
+
 	r.HandleFunc("/api/groups", func(w http.ResponseWriter, r *http.Request) {
 		controllers.CreateGroup(w, r, usersCollection, groupCollection) // Assuming groupCollection is defined
 	}).Methods("POST")

@@ -15,7 +15,7 @@ type Expense struct {
 	Split       []ExpenseSplit     `bson:"split"`       // Information on how the expense is split among users
 	CreatedAt   time.Time          `bson:"createdAt"`   // Timestamp of when the expense was created
 	ModifiedAt  time.Time          `bson:"modifiedAt"`  // Timestamp of last modification
-	CreatedBy   primitive.ObjectID `bson:"userId"`      // ID of the user who created the expense
+	CreatedBy   primitive.ObjectID `bson:"createdBy"`   // ID of the user who created the expense
 }
 
 // ExpenseSplit represents how an individual expense is split among the users

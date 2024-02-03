@@ -22,12 +22,15 @@ func CreateExpense(w http.ResponseWriter, r *http.Request, collection *mongo.Col
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if expense.CreatedBy == primitive.NilObjectID {
+		http.Error(w, "CreatedBy (userId) is required", http.StatusBadRequest)
+		return
+	}
 
 	// Set the ID and timestamps
 	expense.ID = primitive.NewObjectID()
 	expense.CreatedAt = time.Now()
 	expense.ModifiedAt = time.Now()
-
 	// Insert the expense into the collection
 	_, err = collection.InsertOne(context.TODO(), expense)
 	if err != nil {
